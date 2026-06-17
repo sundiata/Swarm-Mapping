@@ -216,14 +216,21 @@ All plotting is done through **pyplot** functions:
 | `plt.savefig()` | Saves the image to `output/bs_estimation.png` |
 | `plt.show()` | Optional: display the plot on screen |
 
-**`plot_estimation()`** draws:
-- **Black triangles** — smartphone positions (`plt.scatter`)
-- **Dashed circles** — distance circles from RSSI, one color per tower
-- **X marks** — points where circles intersect (where the algorithm finds candidates)
-- **Stars** — final estimated tower positions
-- **Solid circles** — 600 m transmission radius around each tower
+**`plot_estimation()`** — clean **2×2 grid**, one tower per panel:
 
-This helps you **see** why the algorithm picked those positions.
+| Panel | Tower | Position |
+|-------|-------|----------|
+| Top-left | CI 12801 | (1000, 800) |
+| Top-right | CI 12802 | (1600, 2400) |
+| Bottom-left | CI 12803 | (2000, 1600) |
+| Bottom-right | CI 12804 | (800, 2000) |
+
+**Symbols:**
+- **▲** = smartphone (hover/labels show SP number)
+- **○ dashed** = RSSI distance circle
+- **★** = estimated tower
+
+Details (RSSI values) appear on **hover** in the interactive HTML version.
 
 ---
 
@@ -284,14 +291,25 @@ You will see:
 2. Verification checks
 3. Noise analysis
 4. Written answers for sections 2.5–2.7
-5. A **matplotlib plot window** pops up (`plt.show()`)
-6. The plot also opens in **Preview** (macOS) via `open output/bs_estimation.png`
+5. A **matplotlib plot window** pops up — use toolbar to zoom/pan
+6. An **interactive HTML graph** opens in your browser — scroll to zoom
 7. Results saved to `output/results.json`
 
-If the plot window does not appear, open the image manually:
+### Zoom the graph
+
+**Best option — interactive HTML (recommended):**
 ```bash
-open output/bs_estimation.png
+open output/bs_estimation_interactive.html
 ```
+- **Scroll wheel** = zoom in/out
+- **Click + drag** = pan/move
+- **Double-click** = reset view
+- **Hover** = see phone/tower details
+
+**Matplotlib window** (also opens when you run `main.py`):
+- Click **magnifying glass** → drag a box to zoom
+- Click **cross arrows** → drag to pan
+- Click **home icon** → reset view
 
 ---
 

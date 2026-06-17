@@ -31,6 +31,84 @@ Stronger signal → phone is closer to the tower.
 
 ---
 
+## Assignment data grouped by CI
+
+Values from the assignment PDF (section 2). Each row is one measurement: which phone (SP), signal strength (RSSI), time, and phone coordinates (x, y).
+
+### CI 12801
+
+| SP | RSSI | Time | SP x | SP y | max_rssi | Distance (m) |
+|----|------|------|------|------|----------|--------------|
+| 1 | 10.0 | 100045 | 1450.0 | 1040.0 | 61 | 510.0 |
+| 1 | 53.0 | 100230 | 936.0 | 752.0 | 61 | 80.0 |
+| 1 | 36.0 | 110002 | 850.0 | 600.0 | 61 | 250.0 |
+| 2 | 176.0 | 129885 | 827.2 | 850.4 | 251 | 180.0 |
+| 2 | 201.0 | 134546 | 904.0 | 728.0 | 251 | 120.0 |
+| 3 | 10.0 | 004725 | 784.0 | 1262.0 | 61 | 510.0 |
+
+**6 measurements** from SP1, SP2, and SP3 → 6 circles used to find tower 12801.
+
+---
+
+### CI 12802
+
+| SP | RSSI | Time | SP x | SP y | max_rssi | Distance (m) |
+|----|------|------|------|------|----------|--------------|
+| 2 | 108.0 | 156778 | 1468.0 | 2716.8 | 251 | 343.2 |
+| 3 | 24.0 | 007321 | 1720.0 | 2050.0 | 61 | 370.0 |
+| 4 | 87.0 | 094521 | 1984.0 | 2313.6 | 251 | 393.6 |
+
+**3 measurements** from SP2, SP3, and SP4 → 3 circles used to find tower 12802.
+
+---
+
+### CI 12803
+
+| SP | RSSI | Time | SP x | SP y | max_rssi | Distance (m) |
+|----|------|------|------|------|----------|--------------|
+| 3 | 8.0 | 007321 | 1720.0 | 2050.0 | 61 | 530.0 |
+| 4 | 17.0 | 136744 | 2216.0 | 2118.4 | 251 | 561.6 |
+
+**2 measurements** from SP3 and SP4 → 2 circles used to find tower 12803.
+
+---
+
+### CI 12804
+
+| SP | RSSI | Time | SP x | SP y | max_rssi | Distance (m) |
+|----|------|------|------|------|----------|--------------|
+| 2 | 9.0 | 164747 | 219.2 | 2000.0 | 251 | 580.8 |
+| 4 | 70.0 | 156554 | 800.0 | 2434.4 | 251 | 434.4 |
+
+**2 measurements** from SP2 and SP4 → 2 circles used to find tower 12804.
+
+---
+
+### Exclusion points (CI = "-", RSSI = 0)
+
+Phone was **outside all known towers**. Used to rule out wrong tower positions.
+
+| SP | RSSI | Time | SP x | SP y |
+|----|------|------|------|------|
+| 2 | 0.0 | 169567 | 339.2 | 2614.4 |
+| 4 | 0.0 | 174677 | 161.6 | 2748.8 |
+
+---
+
+### Quick summary
+
+| CI | # of measurements | Smartphones | Estimated tower position |
+|----|-------------------|-------------|--------------------------|
+| 12801 | 6 | SP1, SP2, SP3 | (1000, 800) |
+| 12802 | 3 | SP2, SP3, SP4 | (1600, 2400) |
+| 12803 | 2 | SP3, SP4 | (2000, 1600) |
+| 12804 | 2 | SP2, SP4 | (800, 2000) |
+| — (exclusion) | 2 | SP2, SP4 | (not a tower) |
+
+**Distance formula:** `|(RSSI - max_rssi) × (600 / (max_rssi - 1))|`
+
+---
+
 ## Step-by-step (in plain English)
 
 ### Step 1: Read the data

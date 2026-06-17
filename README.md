@@ -23,7 +23,8 @@ This prints:
 - Written answers for sections 2.5–2.7
 
 Outputs:
-- `output/bs_estimation.png` – visualization
+- `output/bs_estimation.png` – static image
+- `output/bs_estimation_interactive.html` – **zoomable** interactive graph (scroll to zoom)
 - `output/results.json` – numeric results
 
 ## Project Structure

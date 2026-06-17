@@ -10,7 +10,7 @@ from data.measurements import MEASUREMENTS, TRANSMISSION_RADIUS_M
 from src.noise import CHIPSET_NOISE, compare_with_noise, noisy_measurements, robust_estimate
 from src.positioning import estimate_all_base_stations
 from src.rssi import rssi_to_distance
-from src.visualization import open_plot, plot_estimation
+from src.visualization import open_plot, plot_estimation, plot_interactive_html
 
 
 def print_section(title: str) -> None:
@@ -144,9 +144,10 @@ def main() -> None:
     fake_bs_detection()
 
     plot_path = plot_estimation(estimates, output_dir / "bs_estimation.png", show=True)
-    open_plot(plot_path)
-    print_section("Plot saved and opened")
-    print(plot_path.resolve())
+    html_path = plot_interactive_html(estimates, output_dir / "bs_estimation_interactive.html")
+    print_section("Plots saved")
+    print(f"Static image:  {plot_path.resolve()}")
+    print(f"Interactive (zoomable): {html_path.resolve()}")
 
     results_path = output_dir / "results.json"
     results_path.write_text(
