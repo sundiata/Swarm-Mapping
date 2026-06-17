@@ -327,6 +327,162 @@ open output/bs_estimation_interactive.html
 
 ---
 
+## Assignment Answers (Sections 2.3–2.7)
+
+Written answers you can use for your lab presentation and report.
+
+---
+
+### 2.3 Verification of the Implementation (25 points)
+
+**What we verify**
+
+1. RSSI → distance conversion matches the assignment formula
+2. Estimated tower positions fit all measurement circles with low error
+
+**Formula used**
+
+```
+d = |(rssi − max_rssi) × (600 / (max_rssi − 1))|
+```
+
+- `max_rssi = 61` for SP1 and SP3
+- `max_rssi = 251` for SP2 and SP4
+- `r = 600 m`
+
+**Sample conversions (from assignment)**
+
+| RSSI | max_rssi | Distance |
+|------|----------|----------|
+| 10 | 61 | 510 m |
+| 53 | 61 | 80 m |
+| 176 | 251 | 180 m |
+| 201 | 251 | 120 m |
+| 9 | 251 | 581 m |
+
+**Estimated base station positions**
+
+| CI | Position (x, y) | Circles used | Residual error |
+|----|-----------------|--------------|----------------|
+| 12801 | (1000, 800) | 6 | 0 m |
+| 12802 | (1600, 2400) | 3 | 0 m |
+| 12803 | (2000, 1600) | 2 | 0 m |
+| 12804 | (800, 2000) | 2 | 0 m |
+
+**Why this proves accuracy**
+
+- For each tower, we draw circles around every phone that heard it.
+- All circles for the same CI intersect at one point.
+- That point has residual error = 0 — every phone’s distance matches its RSSI circle.
+- Exclusion rules were applied: RSSI = 0 points (SP2 at 339, 2614 and SP4 at 162, 2749) mean “outside all towers.” None of our estimates fall within 600 m of those points.
+
+**Conclusion:** The implementation is verified. All 4 towers are found with perfect geometric fit on the assignment data.
+
+---
+
+### 2.4 Consideration of RSSI Noise (15 points)
+
+**What noise different chipsets add**
+
+| Phone | RSSI range | Typical noise | Effect |
+|-------|------------|---------------|--------|
+| SP1, SP3 | 0–61 | ~±3 dB | Coarse steps → up to ~45 m distance error |
+| SP2 | 0–251 | ~±2 dB | Finer scale but vendor offset → ~30 m |
+| SP4 | 0–251 | ~±2.5 dB | Shadowing/multipath → ~35 m |
+
+**Sources of noise:** different chip manufacturers, quantization (61 vs 251 scale), multipath, and shadowing in urban GSM.
+
+**How we account for it in the code**
+
+1. **Simulate noise** — add random jitter to RSSI values (`src/noise.py`)
+2. **Re-run the algorithm** and compare to clean results
+3. **Robust estimate** — inflate circle radii by 8% to absorb uncertainty
+
+**How positions differ from section 2.3**
+
+With simulated RSSI noise (seed=42):
+
+| CI | Clean (2.3) | Noisy | Shift |
+|----|-------------|-------|-------|
+| 12801 | (1000, 800) | (1013, 796) | 13.5 m |
+| 12802 | (1600, 2400) | (1606, 2403) | 6.5 m |
+| 12803 | (2000, 1600) | (2034, 1592) | 35.3 m |
+| 12804 | (800, 2000) | (799, 2000) | 0.7 m |
+
+Residual error also rises (e.g. CI 12801: 0 → 11.5 m).
+
+With 8% radius inflation (robust mode), positions shift 40–57 m from baseline — a deliberate trade-off for stability under noise.
+
+**Conclusion:** Real-world chipset noise can move estimates by tens of meters. More measurements and robust fitting reduce the impact.
+
+---
+
+### 2.5 Consideration of the Time of Measurement (5 points)
+
+**The problem**
+
+Each measurement has a timestamp, but smartphone clocks are not synchronized. So:
+
+- The (x, y) position may be from a different moment than the RSSI reading
+- If the user is moving, the circle is centered on the wrong position
+
+**Effect on results**
+
+- Circles are drawn at the wrong place → intersections shift
+- Error grows with speed × time skew
+- Example: 5 m/s walking + 2 s clock error → circle center off by ~10 m
+
+**What to do about it**
+
+- Reject or down-weight samples with large time differences between phones
+- Estimate velocity and back-project position to a common time
+- Prefer stationary measurements
+- Use robust fitting (median intersections) to reduce outlier impact
+
+**Conclusion:** Unsynchronized clocks can falsify tower positions, especially for moving users. Time alignment matters as much as RSSI accuracy.
+
+---
+
+### 2.6 Approximation Without Transmission Radius (5 points)
+
+If `r = 600 m` is unknown, you cannot convert RSSI directly to meters. Approaches:
+
+1. **Treat RSSI as relative only** — rank by signal strength, not absolute distance
+2. **Estimate r per tower** — strongest RSSI ≈ distance 0; weakest in-range RSSI ≈ r
+3. **Multi-lateration with unknown scale** — solve positions and scale together via least squares across all towers
+4. **Cross-validation** — try different r values; pick the one that minimizes residual error across all CIs
+5. **Use RSSI = 0 exclusion points** — they prove “outside range” without needing exact r (upper bound only)
+
+**Conclusion:** Without r, you lose absolute scale but can still estimate relative tower positions using ranking, joint optimization, and exclusion constraints.
+
+---
+
+### 2.7 Optional: Detection of Fake Base Stations
+
+**Post-mortem detection ideas for the server**
+
+A fake base station (IMSI catcher / rogue cell) may appear temporarily. Detection signals:
+
+| Signal | Why it’s suspicious |
+|--------|---------------------|
+| Circles never intersect consistently | Fake CI geometry doesn’t match real measurements over time |
+| Sudden new CI with strong RSSI | Appears in an area already covered by known towers |
+| Position “jumps” between sessions | Real towers are fixed; fake ones move |
+| Seen only by some phones | Selective spoofing / jamming pattern |
+| Unknown CI + strong signal | Not in operator cell database |
+| Duplicate LAC with abnormal timing | Clone of a real tower with wrong timing advance |
+
+**Server adaptation**
+
+- Store historical estimates per CI over time
+- Flag CIs with high residual error or unstable position
+- Cross-check against known operator cell maps
+- Alert when a CI appears only briefly or only for a subset of devices
+
+**Conclusion:** Fake towers leave geometric and temporal inconsistencies. The server should track CI behavior over time, not just single snapshots.
+
+---
+
 ## Quick summary
 
 This project takes signal strength reports from multiple phones, converts them into distance circles, finds where those circles overlap, and estimates where cell towers are located. The code is split into small files: data, conversion, algorithm, noise handling, visualization, and a main file that ties everything together.

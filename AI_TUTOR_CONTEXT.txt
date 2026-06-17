@@ -1,0 +1,457 @@
+================================================================================
+LAB 3 - BASE STATION MAPPING PROJECT
+Context file for an AI tutor to explain this project to a student
+================================================================================
+
+INSTRUCTIONS FOR THE AI TUTOR
+-----------------------------
+You are helping a student understand a university lab assignment called
+"Approximating positions of mobile base stations" (Mobile Security, Lab 3).
+
+Please explain things in simple, clear English. Use everyday examples when
+possible. The student may ask about specific steps (especially Step 4 and
+Step 5). Answer patiently and use short sentences.
+
+When explaining, you can use:
+- Simple analogies (treasure hunt, friends standing in a field, etc.)
+- Small numbered steps
+- Examples from the data below
+
+Do not assume the student knows advanced math or programming.
+
+
+================================================================================
+PART 1: WHAT IS THIS PROJECT ABOUT?
+================================================================================
+
+PROBLEM:
+We have 4 smartphones walking around a city. Each phone knows its own GPS
+position (x, y). Each phone can measure how strong a cell tower signal is
+(called RSSI) and which tower it hears (called CI = Cell ID).
+
+We do NOT know where the cell towers (base stations) are.
+
+GOAL:
+Use all the phone measurements together to estimate where each tower is.
+
+MAIN IDEA (one sentence):
+If a phone knows it is about 200 meters from a tower, the tower must be
+somewhere on a circle with radius 200m drawn around the phone. When many
+phones hear the SAME tower, their circles should cross at one point — that
+point is probably where the tower is.
+
+This technique is called SWARM MAPPING — many phones work together.
+
+
+================================================================================
+PART 2: IMPORTANT WORDS (GLOSSARY)
+================================================================================
+
+Base Station (BS)     = A cell tower that sends phone signal
+CI (Cell ID)          = A number that identifies a specific tower
+                        Example: 12801, 12802, 12803, 12804
+RSSI                  = Signal strength number from the phone
+                        Higher RSSI = stronger signal = phone is CLOSER
+Smartphone (SP)       = One of the 4 phones (SP1, SP2, SP3, SP4)
+max_rssi              = Maximum RSSI value for that phone's chip
+                        SP1 and SP3 use max_rssi = 61
+                        SP2 and SP4 use max_rssi = 251
+Transmission radius   = Maximum tower range = 600 meters (given in assignment)
+Circle                = Drawn around a phone; radius = estimated distance to tower
+Intersection          = A point where two circles cross each other
+Residual error        = How "wrong" a point is compared to all circles
+                        (lower = better fit)
+Exclusion point       = A phone position where RSSI=0, meaning the phone was
+                        outside ALL tower ranges
+
+
+================================================================================
+PART 3: THE ASSIGNMENT DATA
+================================================================================
+
+DISTANCE FORMULA:
+distance = |(RSSI - max_rssi) × (600 / (max_rssi - 1))|
+
+If RSSI = 0 or CI = "-", the phone is outside all towers (exclusion point).
+
+
+--- CI 12801 (6 measurements) ---
+
+SP1 | RSSI=10  | position (1450, 1040) | max_rssi=61  | distance=510m
+SP1 | RSSI=53  | position (936, 752)   | max_rssi=61  | distance=80m
+SP1 | RSSI=36  | position (850, 600)   | max_rssi=61  | distance=250m
+SP2 | RSSI=176 | position (827, 850)   | max_rssi=251 | distance=180m
+SP2 | RSSI=201 | position (904, 728)   | max_rssi=251 | distance=120m
+SP3 | RSSI=10  | position (784, 1262)  | max_rssi=61  | distance=510m
+
+Estimated tower position: (1000, 800)
+
+
+--- CI 12802 (3 measurements) ---
+
+SP2 | RSSI=108 | position (1468, 2717) | max_rssi=251 | distance=343m
+SP3 | RSSI=24  | position (1720, 2050) | max_rssi=61  | distance=370m
+SP4 | RSSI=87  | position (1984, 2314) | max_rssi=251 | distance=394m
+
+Estimated tower position: (1600, 2400)
+
+
+--- CI 12803 (2 measurements) ---
+
+SP3 | RSSI=8  | position (1720, 2050) | max_rssi=61  | distance=530m
+SP4 | RSSI=17 | position (2216, 2118) | max_rssi=251 | distance=562m
+
+Estimated tower position: (2000, 1600)
+
+
+--- CI 12804 (2 measurements) ---
+
+SP2 | RSSI=9  | position (219, 2000)  | max_rssi=251 | distance=581m
+SP4 | RSSI=70 | position (800, 2434)  | max_rssi=251 | distance=434m
+
+Estimated tower position: (800, 2000)
+
+
+--- EXCLUSION POINTS (RSSI=0, outside all towers) ---
+
+SP2 | RSSI=0 | position (339, 2614)
+SP4 | RSSI=0 | position (162, 2749)
+
+
+--- FINAL RESULTS SUMMARY ---
+
+CI 12801 -> (1000, 800)   | 6 circles | phones SP1, SP2, SP3
+CI 12802 -> (1600, 2400)  | 3 circles | phones SP2, SP3, SP4
+CI 12803 -> (2000, 1600)  | 2 circles | phones SP3, SP4
+CI 12804 -> (800, 2000)   | 2 circles | phones SP2, SP4
+
+
+================================================================================
+PART 4: THE ALGORITHM — ALL STEPS EXPLAINED SIMPLY
+================================================================================
+
+STEP 1: READ THE DATA
+---------------------
+For each measurement from each smartphone, read:
+- CI (which tower)
+- RSSI (signal strength)
+- phone position (x, y)
+- max_rssi (depends on phone chip type)
+- time
+
+
+STEP 2: CONVERT RSSI TO DISTANCE
+---------------------------------
+Turn the signal strength into a distance in meters.
+
+IF RSSI is 0 OR CI is "-":
+    The phone is outside all towers.
+    Save this phone position as an EXCLUSION point.
+    Skip this measurement.
+
+ELSE:
+    distance = |(RSSI - max_rssi) × (600 / (max_rssi - 1))|
+
+Examples:
+    RSSI=53, max=61  -> distance = 80m   (phone is CLOSE to tower)
+    RSSI=10, max=61  -> distance = 510m  (phone is FAR from tower)
+
+Higher RSSI = stronger signal = shorter distance = smaller circle.
+
+
+STEP 3: DRAW CIRCLES
+--------------------
+For each valid measurement:
+    Draw a circle centered on the phone's position (x, y)
+    The circle radius = the distance from Step 2
+
+Group all circles by CI (same tower ID together).
+Example: all circles for CI 12801 go in one group.
+
+
+STEP 4: FIND THE TOWER POSITION FOR EACH CI
+--------------------------------------------
+This is the most important step. Explained in detail in Part 5 below.
+
+
+STEP 5: CHECK EXCLUSION POINTS
+-------------------------------
+Explained in detail in Part 6 below.
+
+
+STEP 6: RETURN RESULTS
+-----------------------
+Output a list of all towers with their estimated (x, y) coordinates.
+
+
+STEP 7: PLOT THE RESULTS (using matplotlib.pyplot)
+---------------------------------------------------
+Draw phones, circles, intersections, and tower positions on a graph.
+Save as PNG and interactive HTML (scroll to zoom).
+
+
+================================================================================
+PART 5: STEP 4 EXPLAINED (VERY SIMPLE — LIKE FOR A 12 YEAR OLD)
+================================================================================
+
+ANALOGY: FINDING HIDDEN TREASURE
+
+Imagine you don't know where a treasure is buried. But 3 or 4 friends stand
+in different places and each one says:
+
+    "The treasure is THIS FAR away from me."
+
+You draw a circle around each friend. The radius of the circle is how far
+they said the treasure is. The treasure must be somewhere ON THE EDGE of
+each circle.
+
+When you draw all the circles, they CROSS each other at certain spots.
+Those crossing spots are called INTERSECTION POINTS.
+
+The treasure is probably at one of those crossing spots.
+
+
+WHAT IF THERE ARE MANY CROSSING SPOTS?
+---------------------------------------
+Sometimes circles cross in more than one place. So you check each spot and
+ask: "How wrong is this spot?"
+
+For each candidate spot P:
+    For each circle (center C, radius r):
+        Measure how far P is from the center C  -> this is actual_distance
+        The circle says it should be exactly r away
+        Error = |actual_distance - r|
+
+    Add up all the errors and take the average = RESIDUAL ERROR
+
+Pick the spot with the SMALLEST residual error (least wrong).
+
+That is the BEST POSITION.
+
+
+EXAMPLE WITH TWO CIRCLES (CI 12803):
+
+    Candidate Point A: error 5m on circle 1, error 50m on circle 2
+                       average = 27.5m  (not great)
+
+    Candidate Point B: error 0m on circle 1, error 0m on circle 2
+                       average = 0m  (PERFECT — this wins!)
+
+Point B sits exactly on both circle edges. That is the tower position.
+
+
+IN OUR ASSIGNMENT DATA:
+All four towers have residual error = 0 meters. The circles meet perfectly
+at one point for each tower. That is why the answers are so clean.
+
+
+BACKUP PLAN (when circles do NOT cross):
+-----------------------------------------
+Sometimes circles don't intersect (only one circle, or circles too far apart).
+
+Then we use a WEIGHTED AVERAGE of the phone positions (circle centers).
+
+NOT a simple average. Phones with SMALLER circles (closer to tower, stronger
+signal) get MORE weight:
+
+    weight = 1 / radius
+
+    tower_x = sum(phone_x × weight) / sum(all weights)
+    tower_y = sum(phone_y × weight) / sum(all weights)
+
+Example:
+    SP3 at (1720, 2050) with radius 370m -> weight = 1/370 = 0.00270
+    SP4 at (2216, 2118) with radius 562m -> weight = 1/562 = 0.00178
+
+SP3 has a smaller circle (closer to tower) so it pulls the answer more
+toward itself.
+
+
+ONE SENTENCE SUMMARY OF STEP 4:
+Find where the circles cross, then pick the crossing point that fits all
+circles best (smallest error). If they don't cross, use a weighted average
+of phone positions with closer phones counting more.
+
+
+================================================================================
+PART 6: STEP 5 EXPLAINED (EXCLUSION CHECK)
+================================================================================
+
+WHAT ARE EXCLUSION POINTS?
+--------------------------
+Some phone readings say RSSI = 0 and CI = "-".
+
+This means: at that moment, the phone was OUTSIDE the 600m range of EVERY
+known tower. No tower was close enough to be detected.
+
+
+WHAT DOES STEP 5 DO?
+--------------------
+After estimating tower positions, we do a safety check:
+
+    FOR each estimated tower T:
+        FOR each exclusion phone E (RSSI=0):
+            IF tower T is closer than 600m to phone E:
+                REJECT tower T — this estimate is impossible
+
+WHY?
+----
+If a tower were really within 600m of that phone, the phone WOULD have
+received a signal (RSSI would be greater than 0). Since it reported 0,
+no tower can be that close.
+
+
+EXAMPLE:
+    SP2 at position (339, 2614) reported RSSI = 0 (outside all towers)
+
+    If we wrongly guessed tower 12802 is only 400m from SP2, that is
+    impossible — SP2 would have heard tower 12802.
+
+    So we reject that estimate.
+
+
+WHAT HAPPENS IN OUR DATA?
+--------------------------
+All four estimated towers are far enough from the exclusion points.
+None get rejected. Step 5 is a safety net that does not change our
+final answers for this particular dataset.
+
+
+ONE SENTENCE SUMMARY OF STEP 5:
+If a phone said "I hear nothing" (RSSI=0), no tower can be within 600m
+of that phone — use this to throw away bad guesses.
+
+
+================================================================================
+PART 7: HOW TO READ THE GRAPH
+================================================================================
+
+The project creates a graph with 4 panels (one per tower CI).
+
+In each panel you see:
+    - Triangles = smartphones (at the center of each circle)
+    - Dashed circles = RSSI distance (how far the phone thinks the tower is)
+    - Orange X marks = intersection points (where circle pairs cross)
+    - Orange ring = best intersection (the chosen point)
+    - Star = final estimated tower position
+    - Labels show SP number, RSSI value, and circle radius
+
+The graph is saved as:
+    output/bs_estimation.png          (static image)
+    output/bs_estimation_interactive.html  (scroll to zoom in browser)
+
+Legend:
+    Triangle = smartphone (circle center)
+    Dashed circle = RSSI distance circle
+    X = circle intersection
+    Ring = best intersection (chosen point)
+    Star = estimated tower
+
+
+================================================================================
+PART 8: FULL PSEUDOCODE (SIMPLE VERSION)
+================================================================================
+
+START
+
+SET tower_range = 600 meters
+
+CREATE empty list: exclusion_points
+CREATE empty map: circles_by_tower
+
+FOR EACH measurement:
+    IF CI is missing OR RSSI is 0:
+        ADD phone position TO exclusion_points
+    ELSE:
+        distance = |(RSSI - max_rssi) x (600 / (max_rssi - 1))|
+        ADD circle(phone_x, phone_y, distance) TO circles_by_tower[CI]
+
+CREATE empty list: results
+
+FOR EACH tower_id, circles IN circles_by_tower:
+    candidates = all points where circle pairs intersect
+
+    IF candidates is not empty:
+        best_point = candidate with smallest residual error
+    ELSE:
+        best_point = weighted average of circle centers
+                     (weight = 1/radius for each circle)
+
+    ADD (tower_id, best_point) TO results
+
+FOR EACH (tower_id, position) IN results:
+    FOR EACH exclusion_point:
+        IF distance(position, exclusion_point) < 600:
+            REMOVE this result
+
+PRINT results
+PLOT phones, circles, intersections, towers
+SAVE plot to file
+
+END
+
+
+================================================================================
+PART 9: KEY IDEAS TO REMEMBER
+================================================================================
+
+1. Different phones use different RSSI scales (61 vs 251) — always use the
+   correct max_rssi for each phone.
+
+2. Same CI = same tower — group circles by CI before finding intersections.
+
+3. Circles overlap at intersection points — the tower is at the best overlap.
+
+4. Best position = intersection point with lowest residual error (smallest
+   average mistake across all circles).
+
+5. Backup = weighted average of phone positions when circles don't cross.
+   Closer phones (smaller radius) get more weight.
+
+6. RSSI = 0 means phone was outside all towers — use to reject bad estimates
+   in Step 5.
+
+7. All four towers in this assignment have perfect fit (0m residual error).
+
+
+================================================================================
+PART 10: COMMON STUDENT QUESTIONS (AI CAN ANSWER THESE)
+================================================================================
+
+Q: What is CI?
+A: Cell ID — a number that identifies which tower the phone is hearing.
+
+Q: Why do different phones have different max_rssi?
+A: Different phone chips measure signal differently. SP1/SP3 use 0-61,
+   SP2/SP4 use 0-251.
+
+Q: Why draw circles?
+A: Each phone says "the tower is X meters from me." That means the tower
+   is somewhere on a circle of radius X around the phone.
+
+Q: How do you pick the best intersection?
+A: Calculate residual error for each intersection point. Pick the one with
+   the smallest average error across all circles.
+
+Q: What is residual error?
+A: For a candidate point, measure how far it is from each circle's edge.
+   Average those mistakes. Lower = better fit.
+
+Q: What is the weighted average backup?
+A: When circles don't cross, average the phone positions but give more
+   weight to phones with smaller circles (closer/stronger signal).
+
+Q: What is Step 5 for?
+A: Safety check. Phones with RSSI=0 were outside all towers, so no estimated
+   tower can be within 600m of them.
+
+Q: Why didn't Step 5 reject any towers in our data?
+A: All four estimated towers are far from the exclusion phone positions.
+
+Q: What are the final tower positions?
+A: 12801=(1000,800), 12802=(1600,2400), 12803=(2000,1600), 12804=(800,2000)
+
+
+================================================================================
+END OF CONTEXT FILE
+================================================================================
