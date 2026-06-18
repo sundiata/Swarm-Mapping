@@ -13,6 +13,7 @@ from src.rssi import apply_noise, rssi_to_distance
 
 @dataclass
 class ChipsetNoiseProfile:
+    profile_name: str
     smartphone_id: int
     max_rssi: int
     typical_noise_db: float
@@ -24,20 +25,36 @@ class ChipsetNoiseProfile:
 # Different manufacturers use different scales and calibration offsets.
 CHIPSET_NOISE: list[ChipsetNoiseProfile] = [
     ChipsetNoiseProfile(
-        1, 61, 3.0, 45.0,
-        "Low-range chipset (0–61): coarser quantization, ~±3 dB typical RSSI jitter.",
+        profile_name="GSM-CoarseScale-61-SP1",
+        smartphone_id=1,
+        max_rssi=61,
+        typical_noise_db=3.0,
+        distance_noise_std_m=45.0,
+        notes="Low-range chipset (0–61): coarser quantization, ~±3 dB typical RSSI jitter.",
     ),
     ChipsetNoiseProfile(
-        2, 251, 2.0, 30.0,
-        "High-range chipset (0–251): finer steps but vendor-specific offset; ~±2 dB.",
+        profile_name="GSM-FineScale-251-SP2",
+        smartphone_id=2,
+        max_rssi=251,
+        typical_noise_db=2.0,
+        distance_noise_std_m=30.0,
+        notes="High-range chipset (0–251): finer steps but vendor-specific offset; ~±2 dB.",
     ),
     ChipsetNoiseProfile(
-        3, 61, 3.0, 45.0,
-        "Same range as SP1; multipath in urban GSM adds distance uncertainty.",
+        profile_name="GSM-CoarseScale-61-SP3",
+        smartphone_id=3,
+        max_rssi=61,
+        typical_noise_db=3.0,
+        distance_noise_std_m=45.0,
+        notes="Same scale as SP1; multipath in urban GSM adds distance uncertainty.",
     ),
     ChipsetNoiseProfile(
-        4, 251, 2.5, 35.0,
-        "High-range chipset; shadowing can shift derived distance by tens of meters.",
+        profile_name="GSM-FineScale-251-SP4",
+        smartphone_id=4,
+        max_rssi=251,
+        typical_noise_db=2.5,
+        distance_noise_std_m=35.0,
+        notes="High-range chipset; shadowing can shift derived distance by tens of meters.",
     ),
 ]
 

@@ -46,7 +46,7 @@ def analyze_noise(estimates) -> None:
 
     print("Chipset noise profiles:")
     for p in CHIPSET_NOISE:
-        print(f"  SP{p.smartphone_id} (max RSSI {p.max_rssi}): {p.notes}")
+        print(f"  {p.profile_name} — SP{p.smartphone_id} (max RSSI {p.max_rssi}): {p.notes}")
 
     noisy_meas = noisy_measurements(MEASUREMENTS, seed=42)
     noisy_est = estimate_all_base_stations(noisy_meas)
